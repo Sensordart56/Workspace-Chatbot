@@ -80,11 +80,18 @@ export async function POST(request: NextRequest) {
     // Call Gemini with RAG context, system prompt, and tool definitions in a loop
     const tGenerate = Date.now();
     for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
-      const response = await generate({
-        systemInstruction: extendedSystemInstruction,
-        contents,
-        tools: TOOL_DECLARATIONS,
-      });
+      let response;
+      try {
+        response = await generate({
+          systemInstruction: extendedSystemInstruction,
+          contents,
+          tools: TOOL_DECLARATIONS,
+        });
+      } catch (genError) {
+        console.error(`[Chat API] Error calling Gemini in tool loop on iteration ${iter}:`, genError);
+        answer = "I'm sorry, I'm experiencing high traffic right now and couldn't complete the tool execution.";
+        break;
+      }
 
       const calls = response.functionCalls ?? [];
       if (calls.length === 0) {

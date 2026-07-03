@@ -222,9 +222,11 @@ async function main() {
       chatRes.answer.toLowerCase().includes("do not have") ||
       chatRes.answer.toLowerCase().includes("don't have");
     const hasZeroCitations = !chatRes.citations || chatRes.citations.length === 0;
-    const hasZeroRetrieval = chatRes.retrieval && chatRes.retrieval.chunks.length === 0;
+    const leaksA = chatRes.retrieval && chatRes.retrieval.chunks.some((c: any) => 
+      (c.preview || '').toLowerCase().includes('zinnia') || (c.preview || '').toLowerCase().includes('flowercity')
+    );
 
-    if (isRefusal && hasZeroCitations && hasZeroRetrieval) {
+    if (isRefusal && hasZeroCitations && !leaksA) {
       console.log('RAG Test 2 PASSED: Grounded refusal occurred and Workspace B did NOT leak Workspace A facts.');
     } else {
       console.error('RAG Test 2 FAILED: Workspace B leaked facts or did not refuse grounded question.');

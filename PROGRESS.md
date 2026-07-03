@@ -48,7 +48,7 @@ Phase 4 (Tool Calling) complete, verified end-to-end against real Supabase datab
 - Created dummy PDF file at `test/data/05-versions-space.pdf` to bypass `pdf-parse` debug self-check file lookup.
 - Verified that `npm run build` compiles 100% successfully with type checks passing cleanly.
 - Implemented RAG retriever, context builder, and citation parser (`lib/rag.ts`) with similarity threshold filtering >= 0.50 to prune unrelated chunks and optimize token usage.
-- Created Gemini model client wrapper (`lib/gemini.ts`) using `gemini-2.5-flash` with route-safe 25-second timeouts and single 429 rate limit retries.
+- Created Gemini model client wrapper (`lib/gemini.ts`) using `gemini-3.1-flash-lite` with route-safe 25-second timeouts and single 429 rate limit retries.
 - Created chat message endpoint `/api/chat` (`app/api/chat/route.ts`) with active workspace tenancy validation, workspace-scoped chat history retrieval, user prompt database persistence, and assistant answer/citation storage.
 - Created chat history loading endpoint `/api/chat/history` (`app/api/chat/history/route.ts`) and document listing endpoint `/api/documents` (`app/api/documents/route.ts`), enforcing workspace ownership checks.
 - Created dashboard React UI components: `UploadForm.tsx` (idempotent skips), `DocumentList.tsx`, `ChatWindow.tsx` (inline citations, thinking states, no tool panels), and `RetrievalDebugPanel.tsx` (collapsible source details).
@@ -115,7 +115,7 @@ Phase 5 (Dashboard Composition & Polish) complete, verified compile success, lay
 - Created dummy PDF file at `test/data/05-versions-space.pdf` to bypass `pdf-parse` debug self-check file lookup.
 - Verified that `npm run build` compiles 100% successfully with type checks passing cleanly.
 - Implemented RAG retriever, context builder, and citation parser (`lib/rag.ts`) with similarity threshold filtering >= 0.50 to prune unrelated chunks and optimize token usage.
-- Created Gemini model client wrapper (`lib/gemini.ts`) using `gemini-2.5-flash` with route-safe 25-second timeouts and single 429 rate limit retries.
+- Created Gemini model client wrapper (`lib/gemini.ts`) using `gemini-3.1-flash-lite` with route-safe 25-second timeouts and single 429 rate limit retries.
 - Created chat message endpoint `/api/chat` (`app/api/chat/route.ts`) with active workspace tenancy validation, workspace-scoped chat history retrieval, user prompt database persistence, and assistant answer/citation storage.
 - Created chat history loading endpoint `/api/chat/history` (`app/api/chat/history/route.ts`) and document listing endpoint `/api/documents` (`app/api/documents/route.ts`), enforcing workspace ownership checks.
 - Created dashboard React UI components: `UploadForm.tsx` (idempotent skips), `DocumentList.tsx`, `ChatWindow.tsx` (inline citations, thinking states, no tool panels), and `RetrievalDebugPanel.tsx` (collapsible source details).

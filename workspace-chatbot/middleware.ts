@@ -52,7 +52,9 @@ export async function middleware(request: NextRequest) {
     pathname === '/' ||
     pathname.startsWith('/api/workspaces') ||
     pathname.startsWith('/api/upload') ||
-    pathname.startsWith('/api/chat');
+    pathname.startsWith('/api/chat') ||
+    pathname.startsWith('/api/tasks') ||
+    pathname.startsWith('/api/tool-calls');
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();

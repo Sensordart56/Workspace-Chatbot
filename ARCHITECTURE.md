@@ -146,7 +146,7 @@ Top-K Chunks (5)
      │
 Context Builder (number each chunk: [1] filename.txt chunk 3: ...)
      │
-Gemini (gemini-3.5-flash) ── with tool declarations + chat history ──
+Gemini (gemini-3.1-flash-lite) ── with tool declarations + chat history ──
      │
    Tool call?──yes──▶ validate → execute → append result → back to Gemini
      │no
@@ -305,7 +305,7 @@ message has `@everyone` stripped.
 
 ## 9. Model & Service Notes
 
-- Chat/tool-calling: `gemini-3.5-flash` (Gemini API, free tier, GA, function calling
+- Chat/tool-calling: `gemini-3.1-flash-lite` (Gemini API, free tier, GA, function calling
   supported). Google's free-tier model lineup shifts every few weeks — confirm this is
   still current in AI Studio before final submission; the model string only needs
   updating in one place (`lib/gemini.ts`) if it's changed.

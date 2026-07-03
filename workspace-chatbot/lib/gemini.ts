@@ -89,7 +89,20 @@ export async function generate({
 function isRateLimit(err: unknown): boolean {
   if (typeof err === 'object' && err !== null) {
     const anyErr = err as Record<string, unknown>;
-    if (anyErr.status === 429 || anyErr.code === 429) return true;
+    const status = anyErr.status;
+    const code = anyErr.code;
+    if (
+      status === 429 ||
+      code === 429 ||
+      status === '429' ||
+      code === '429' ||
+      status === 'TOO_MANY_REQUESTS' ||
+      code === 'TOO_MANY_REQUESTS' ||
+      status === 'RESOURCE_EXHAUSTED' ||
+      code === 'RESOURCE_EXHAUSTED'
+    ) {
+      return true;
+    }
     const msg = String(anyErr.message ?? '');
     return msg.includes('429') || /RESOURCE_EXHAUSTED|rate limit/i.test(msg);
   }
