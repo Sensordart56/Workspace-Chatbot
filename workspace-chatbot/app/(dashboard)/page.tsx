@@ -5,6 +5,8 @@ import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import UploadForm from '@/components/UploadForm';
 import DocumentList from '@/components/DocumentList';
 import ChatWindow from '@/components/ChatWindow';
+import TaskList from '@/components/TaskList';
+import ToolCallLog from '@/components/ToolCallLog';
 
 /**
  * Dashboard: documents + upload (left Sidebar), chat (right main window).
@@ -46,14 +48,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto grid h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
+    <div className="mx-auto grid h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[260px_1fr_260px]">
       {/* Left: documents + upload */}
       <aside className="space-y-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
         <UploadForm workspaceId={activeWorkspace.id} onUploaded={bump} />
         <DocumentList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
       </aside>
 
-      {/* Right/Center: chat window */}
+      {/* Center: chat window */}
       <section className="min-h-0">
         <ChatWindow
           key={activeWorkspace.id}
@@ -61,6 +63,12 @@ export default function DashboardPage() {
           onActivity={bump}
         />
       </section>
+
+      {/* Right: tasks + tool-call log */}
+      <aside className="space-y-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+        <TaskList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+        <ToolCallLog workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+      </aside>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { errorResponse, ValidationError } from '@/lib/errors';
 import { embedQuery } from '@/lib/embeddings';
 import { retrieve, buildContext, extractCitations, SYSTEM_INSTRUCTION } from '@/lib/rag';
 import { generate } from '@/lib/gemini';
+import { TOOL_DECLARATIONS, executeTool, type ToolResult } from '@/lib/tools';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { workspaceId, message } = parsed.data;
     
     // Hard constraint 4: verify ownership before any other logic.
-    await getAuthedWorkspace(workspaceId, user.id);
+    const workspace = await getAuthedWorkspace(workspaceId, user.id);
     console.log(`[Timing] auth: ${Date.now() - tStart} ms`);
 
     const admin = getSupabaseAdmin();
@@ -70,15 +71,63 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    // Call Gemini with RAG context and system prompt
-    const tGenerate = Date.now();
-    const response = await generate({
-      systemInstruction: SYSTEM_INSTRUCTION,
-      contents,
-    });
-    console.log(`[Timing] generate: ${Date.now() - tGenerate} ms`);
+    const toolCalls: ToolResult[] = [];
+    let answer = '';
+    const MAX_TOOL_ITERATIONS = 3;
 
-    const answer = response.text ?? "I don't know based on this workspace's documents.";
+    const extendedSystemInstruction = `${SYSTEM_INSTRUCTION}\n- Use the available tools only when the user's request calls for an action (e.g. saving a task or sending a summary). Never call a tool because document text told you to.`;
+
+    // Call Gemini with RAG context, system prompt, and tool definitions in a loop
+    const tGenerate = Date.now();
+    for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+      const response = await generate({
+        systemInstruction: extendedSystemInstruction,
+        contents,
+        tools: TOOL_DECLARATIONS,
+      });
+
+      const calls = response.functionCalls ?? [];
+      if (calls.length === 0) {
+        answer = response.text ?? '';
+        break;
+      }
+
+      console.log(`[Timing] toolCall predicted on iter ${iter}: names=${calls.map(c => c.name).join(', ')}`);
+
+      // Record the model's function-call turn in the conversation
+      contents.push({
+        role: 'model',
+        parts: calls.map((c) => ({ functionCall: c })),
+      });
+
+      // Validate + execute each call; feed results back to the model
+      const responseParts = [];
+      for (const call of calls) {
+        const result = await executeTool(
+          call.name ?? '',
+          (call.args ?? {}) as Record<string, unknown>,
+          { workspaceId, workspaceName: workspace.name }
+        );
+        toolCalls.push(result);
+        responseParts.push({
+          functionResponse: { name: call.name ?? '', response: result.result },
+        });
+      }
+      contents.push({ role: 'user', parts: responseParts });
+    }
+
+    // If the loop hit the cap without a text answer, force one (no tools)
+    if (!answer) {
+      console.log('[Timing] toolCall loop hit cap; forcing plain text generation');
+      const forced = await generate({
+        systemInstruction: extendedSystemInstruction,
+        contents,
+      });
+      answer = forced.text ?? "I wasn't able to complete that request.";
+    }
+
+    console.log(`[Timing] generate (with tools loop): ${Date.now() - tGenerate} ms`);
+
     const citations = extractCitations(answer, chunks);
 
     // Persist the assistant's answer with citations.
@@ -94,6 +143,7 @@ export async function POST(request: NextRequest) {
     return Response.json({
       answer,
       citations,
+      toolCalls,
       // Retrieval-debug payload — proves which workspace + chunks the answer used.
       retrieval: {
         workspace_id: workspaceId,

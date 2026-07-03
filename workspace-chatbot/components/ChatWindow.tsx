@@ -4,10 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 import type { Citation } from '@/types';
 import RetrievalDebugPanel, { type RetrievalDebugData } from './RetrievalDebugPanel';
 
+interface ToolCallView {
+  name: string;
+  status: 'success' | 'error';
+  result: Record<string, unknown>;
+}
+
 interface UIMessage {
   role: 'user' | 'assistant';
   content: string;
   citations?: Citation[];
+  toolCalls?: ToolCallView[];
   retrieval?: RetrievalDebugData;
 }
 
@@ -81,6 +88,7 @@ export default function ChatWindow({
           role: 'assistant',
           content: data.answer,
           citations: data.citations,
+          toolCalls: data.toolCalls,
           retrieval: data.retrieval,
         },
       ]);
@@ -113,6 +121,14 @@ export default function ChatWindow({
             >
               <p className="whitespace-pre-wrap">{m.content}</p>
             </div>
+
+            {m.role === 'assistant' && m.toolCalls && m.toolCalls.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {m.toolCalls.map((t, j) => (
+                  <ToolCallCard key={j} tool={t} />
+                ))}
+              </div>
+            )}
 
             {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
@@ -163,6 +179,23 @@ export default function ChatWindow({
           Send
         </button>
       </form>
+    </div>
+  );
+}
+
+function ToolCallCard({ tool }: { tool: ToolCallView }) {
+  const ok = tool.status === 'success';
+  return (
+    <div
+      className={`inline-block rounded-lg border px-3 py-1.5 text-xs ${
+        ok
+          ? 'border-green-800 bg-green-900/20 text-green-300'
+          : 'border-red-800 bg-red-900/20 text-red-300'
+      }`}
+    >
+      {ok ? '🛠️' : '⚠️'} <span className="font-mono">{tool.name}</span> —{' '}
+      {ok ? 'ran' : 'error'}
+      {!ok && tool.result?.error ? `: ${String(tool.result.error)}` : ''}
     </div>
   );
 }
