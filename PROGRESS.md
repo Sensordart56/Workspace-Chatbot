@@ -4,7 +4,7 @@
 > sessions. Update it at the end of every session, or before ending any task.
 
 ## Current Phase
-Phase 2 (Ingestion Pipeline) complete, verified end-to-end on local development server against real Supabase database and Gemini API. Ready for Phase 3 (RAG & Chat).
+Phase 3 (RAG & Chat) complete, verified end-to-end against real Supabase database and Gemini API. Ready for Phase 4 (Tool Calling).
 
 ## Last Completed
 - Scaffolded Next.js App Router project inside `workspace-chatbot` folder.
@@ -47,22 +47,35 @@ Phase 2 (Ingestion Pipeline) complete, verified end-to-end on local development 
   - Reads and parses the 1.5MB assignment specification PDF file using `pdf-parse@1.1.1`, producing 7 chunks with successful sequential embeddings generation and storage.
 - Created dummy PDF file at `test/data/05-versions-space.pdf` to bypass `pdf-parse` debug self-check file lookup.
 - Verified that `npm run build` compiles 100% successfully with type checks passing cleanly.
+- Implemented RAG retriever, context builder, and citation parser (`lib/rag.ts`) with similarity threshold filtering >= 0.50 to prune unrelated chunks and optimize token usage.
+- Created Gemini model client wrapper (`lib/gemini.ts`) using `gemini-3.5-flash` with route-safe 25-second timeouts and single 429 rate limit retries.
+- Created chat message endpoint `/api/chat` (`app/api/chat/route.ts`) with active workspace tenancy validation, workspace-scoped chat history retrieval, user prompt database persistence, and assistant answer/citation storage.
+- Created chat history loading endpoint `/api/chat/history` (`app/api/chat/history/route.ts`) and document listing endpoint `/api/documents` (`app/api/documents/route.ts`), enforcing workspace ownership checks.
+- Created dashboard React UI components: `UploadForm.tsx` (idempotent skips), `DocumentList.tsx`, `ChatWindow.tsx` (inline citations, thinking states, no tool panels), and `RetrievalDebugPanel.tsx` (collapsible source details).
+- Refactored dashboard shell `app/(dashboard)/page.tsx` to render sidebar list and main chat panel keyed by active workspace ID.
+- Added duration timing checkpoints to chat POST API handler.
+- Developed automated RAG integration tests script `scripts/test-rag.ts` validating:
+  - Grounded Zinnia fact retrieval, citations mapping, and debug chunk payloads in Workspace A.
+  - Grounded refusal and zero leakages in isolated Workspace B.
+  - Workspace-scoped chat history and document listing isolation.
+- Verified all TypeScript compilations and Next.js static page generation builds successfully.
 
 ## In Progress / Blocked
-- None (Phase 2 fully complete).
+- None (Phase 3 fully complete).
 
 ## Deviations From PLAN.md / ARCHITECTURE.md
 - **Project Folder Placement**: Next.js project was scaffolded under a subfolder `workspace-chatbot/` because Next.js prohibits spaces and capitalization in project folder naming (which the parent folder `Workspace Chatbot` has).
 - **Pure-JS PDF Parser**: Standardized on pure-JS `pdf-parse@1.1.1` instead of `pdf-parse@2.x` to prevent native prebuild module compilation dependencies (`@napi-rs/canvas`) in serverless environments.
+- **RAG Similarity Filter**: Added similarity threshold filter >= 0.50 on retrieved vector chunks to discard low-quality, orthogonal chunks from large documents, preventing token bloating and Gemini API timeouts.
 
 ## Known Issues / Tech Debt
 - None.
 
 ## Next Step
-- Phase 3: RAG Retrieval and Chat API.
-  - Implement dynamic query embedding and retrieve matching chunks using `match_chunks` RPC.
-  - Implement RAG context construction with strict prompt-injection instructions.
-  - Implement `/api/chat` route carrying multi-turn chat capabilities.
+- Phase 4: Structured Tool Calling & Discord Summary Generation.
+  - Add task creation tool schema and database log tracking.
+  - Add Discord summary generation with prefix validations and link cleaning.
+  - Implement tool calling iterations loop on server.
 
 ## Session Log
 
@@ -74,3 +87,4 @@ Phase 2 (Ingestion Pipeline) complete, verified end-to-end on local development 
 | 2026-07-02 | E2E Testing & Verification Setup | Connected to real Supabase project. Fixed `.env.local` Supabase URL suffix format issue. Programmatically created and confirmed test user `grader-test-unique5@gmail.com`. E2E browser test blocked by missing database tables (PGRST205). |
 | 2026-07-02 | Database Migration & E2E Success | Database schema and RLS policies successfully applied. E2E browser manual validation passed (signup, login, workspace dropdown switcher, persistence, logout). Verified PATCH (rename) and DELETE routes via a custom RLS verification script. Production build completes successfully. Phase 1 complete. |
 | 2026-07-03 | Phase 2 Ingestion Pipeline | Appended vector search RPC to schema; installed `@google/genai` and `pdf-parse@1.1.1`. Implemented text extraction, boundary-aware chunking, L2-normalized embeddings, upload API, and rollback deletion on chunk insert failure. E2E pipeline tests verified (including mock text, duplicate checks, rollback, and parsing the 1.5MB spec PDF file). Production build compiles clean. |
+| 2026-07-03 | Phase 3 RAG & Chat | Implemented retrieval, context assembly, citation parsing, route timeout optimizations, and dashboard layout. Completed automated integration test-rag suites proving grounded retrieval, strict tenant isolation, separated history, and document lists. Production build compiles clean. |
