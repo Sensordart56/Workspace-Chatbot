@@ -1,6 +1,6 @@
 import { createBrowserClient as createBrowserSupabaseClient } from '@supabase/ssr';
 import { createServerClient as createServerSupabaseClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Validate environment variables, failing fast in production
@@ -67,9 +67,9 @@ export async function createServerComponentClient() {
 // 3. Admin client — service-role key, bypasses RLS.
 //    Server-side ONLY. Lazy instantiated to avoid build-time errors.
 // ---------------------------------------------------------------------------
-let adminClient: ReturnType<typeof createClient> | null = null;
+let adminClient: SupabaseClient | null = null;
 
-export function getSupabaseAdmin() {
+export function getSupabaseAdmin(): SupabaseClient {
   if (!adminClient) {
     const url = validateEnv('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL);
     const serviceKey = validateEnv('SUPABASE_SERVICE_ROLE_KEY', process.env.SUPABASE_SERVICE_ROLE_KEY);

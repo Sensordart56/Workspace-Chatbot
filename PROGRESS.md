@@ -4,7 +4,7 @@
 > sessions. Update it at the end of every session, or before ending any task.
 
 ## Current Phase
-Phase 1 complete, verified end-to-end on local development server against real Supabase database. Ready for Phase 2.
+Phase 2 (Ingestion Pipeline) complete, verified end-to-end on local development server against real Supabase database and Gemini API. Ready for Phase 3 (RAG & Chat).
 
 ## Last Completed
 - Scaffolded Next.js App Router project inside `workspace-chatbot` folder.
@@ -34,22 +34,35 @@ Phase 1 complete, verified end-to-end on local development server against real S
 - Created a `scripts/test-rls.ts` script to test API PATCH and DELETE endpoints against RLS constraints. Verified that:
   - Workspace renaming (RLS UPDATE policy) succeeds and returns the updated workspace row.
   - Workspace deletion (RLS DELETE policy) succeeds.
+- Appended `match_chunks` RPC vector search function to `supabase/schema.sql`.
+- Installed production dependencies `@google/genai` and `pdf-parse@1.1.1` (pure JS version with zero native binary compilation dependencies to ensure safe Vercel deployments), and added type definitions under `types/pdf-parse.d.ts`.
+- Implemented hashing utility (`lib/hash.ts`), text chunker (`lib/chunking.ts`) with boundary paragraph/sentence splits, and L2-normalized sequential embeddings generation (`lib/embeddings.ts`) using `gemini-embedding-001` with exponential backoff.
+- Created ingestion pipeline orchestrator (`lib/ingest.ts`) that extracts text, runs chunking/embeddings, inserts records, and performs rollback-style deletion of the document if database chunk insertions fail midway.
+- Created `/api/upload` POST route (`app/api/upload/route.ts`) which enforces active workspace ownership via `getAuthedWorkspace` before executing document ingestion.
+- Built a validation script `scripts/test-ingestion.ts` which automatically:
+  - Dynamically queries the database for the active test workspace (no hardcoded test accounts).
+  - Ingests a mock text document and verifies document/chunk records are saved.
+  - Ingests the same document again and verifies duplicate check catches it (`duplicate: true`).
+  - Simulates vector format failure (10 dimensions instead of 768) and verifies rollback deletes the document row cleanly.
+  - Reads and parses the 1.5MB assignment specification PDF file using `pdf-parse@1.1.1`, producing 7 chunks with successful sequential embeddings generation and storage.
+- Created dummy PDF file at `test/data/05-versions-space.pdf` to bypass `pdf-parse` debug self-check file lookup.
+- Verified that `npm run build` compiles 100% successfully with type checks passing cleanly.
 
 ## In Progress / Blocked
-- None (Phase 1 fully complete).
+- None (Phase 2 fully complete).
 
 ## Deviations From PLAN.md / ARCHITECTURE.md
 - **Project Folder Placement**: Next.js project was scaffolded under a subfolder `workspace-chatbot/` because Next.js prohibits spaces and capitalization in project folder naming (which the parent folder `Workspace Chatbot` has).
+- **Pure-JS PDF Parser**: Standardized on pure-JS `pdf-parse@1.1.1` instead of `pdf-parse@2.x` to prevent native prebuild module compilation dependencies (`@napi-rs/canvas`) in serverless environments.
 
 ## Known Issues / Tech Debt
 - None.
 
 ## Next Step
-- Phase 2: Ingestion pipeline.
-  - Implement `/api/upload` endpoint.
-  - Create chunking strategy (`lib/chunking.ts`) with token split and overlap.
-  - Create embedding API utility (`lib/embeddings.ts`) integrating `gemini-embedding-001`.
-  - Handle rate limits (sequential calls, delay, and backoff).
+- Phase 3: RAG Retrieval and Chat API.
+  - Implement dynamic query embedding and retrieve matching chunks using `match_chunks` RPC.
+  - Implement RAG context construction with strict prompt-injection instructions.
+  - Implement `/api/chat` route carrying multi-turn chat capabilities.
 
 ## Session Log
 
@@ -60,3 +73,4 @@ Phase 1 complete, verified end-to-end on local development server against real S
 | 2026-07-02 | Safe Supabase Refactor & Build | Refactored `lib/supabase.ts` and `lib/auth.ts` to lazily load the Supabase Admin client and throw explicit validation errors if env vars are missing in production. Verified that build continues to compile successfully. |
 | 2026-07-02 | E2E Testing & Verification Setup | Connected to real Supabase project. Fixed `.env.local` Supabase URL suffix format issue. Programmatically created and confirmed test user `grader-test-unique5@gmail.com`. E2E browser test blocked by missing database tables (PGRST205). |
 | 2026-07-02 | Database Migration & E2E Success | Database schema and RLS policies successfully applied. E2E browser manual validation passed (signup, login, workspace dropdown switcher, persistence, logout). Verified PATCH (rename) and DELETE routes via a custom RLS verification script. Production build completes successfully. Phase 1 complete. |
+| 2026-07-03 | Phase 2 Ingestion Pipeline | Appended vector search RPC to schema; installed `@google/genai` and `pdf-parse@1.1.1`. Implemented text extraction, boundary-aware chunking, L2-normalized embeddings, upload API, and rollback deletion on chunk insert failure. E2E pipeline tests verified (including mock text, duplicate checks, rollback, and parsing the 1.5MB spec PDF file). Production build compiles clean. |

@@ -130,3 +130,32 @@ create policy "workspace_isolation" on tasks
   for all using (
     workspace_id in (select id from workspaces where owner_id = auth.uid())
   );
+
+-- ============================================================================
+-- Vector search RPC (the isolation boundary)
+-- ============================================================================
+-- <=> is pgvector cosine distance (0 = identical); similarity = 1 - distance.
+create or replace function match_chunks(
+  query_embedding vector(768),
+  filter_workspace_id uuid,
+  match_count int
+) returns table (
+  id uuid,
+  document_id uuid,
+  chunk_index int,
+  content text,
+  similarity float
+)
+language sql stable
+as $$
+  select
+    c.id,
+    c.document_id,
+    c.chunk_index,
+    c.content,
+    1 - (c.embedding <=> query_embedding) as similarity
+  from chunks c
+  where c.workspace_id = filter_workspace_id
+  order by c.embedding <=> query_embedding asc
+  limit least(match_count, 50);
+$$;
