@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import { WorkspaceProvider } from '@/components/providers/WorkspaceProvider';
-import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 
 export default function DashboardLayout({
   children,
@@ -28,8 +27,6 @@ export default function DashboardLayout({
             <h1 className="text-lg font-semibold text-white">
               Doc Assistant
             </h1>
-            <div className="h-5 w-px bg-gray-700" />
-            <WorkspaceSwitcher />
           </div>
 
           <button

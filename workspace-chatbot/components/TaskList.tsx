@@ -15,13 +15,18 @@ export default function TaskList({
   refreshKey: number;
 }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const currentKey = `${workspaceId}:${refreshKey}`;
+  const loading = loadedKey !== currentKey;
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/tasks?workspaceId=${workspaceId}`)
       .then((r) => (r.ok ? r.json() : { tasks: [] }))
       .then((d) => {
-        if (!cancelled) setTasks(d.tasks ?? []);
+        if (cancelled) return;
+        setTasks(d.tasks ?? []);
+        setLoadedKey(`${workspaceId}:${refreshKey}`);
       });
     return () => {
       cancelled = true;
@@ -33,7 +38,9 @@ export default function TaskList({
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
         Tasks ({tasks.length})
       </h3>
-      {tasks.length === 0 ? (
+      {loading ? (
+        <p className="text-xs text-gray-500">Loading…</p>
+      ) : tasks.length === 0 ? (
         <p className="text-xs text-gray-500">No tasks yet.</p>
       ) : (
         <ul className="space-y-1">

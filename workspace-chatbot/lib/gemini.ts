@@ -12,7 +12,7 @@ import {
  * one-line edit. `gemini-3.5-flash` supports function calling on the free tier.
  */
 
-const CHAT_MODEL = 'gemini-2.5-flash';
+const CHAT_MODEL = 'gemini-3.1-flash-lite';
 const REQUEST_TIMEOUT_MS = 25_000;
 
 let client: GoogleGenAI | null = null;

@@ -15,13 +15,18 @@ export default function ToolCallLog({
   refreshKey: number;
 }) {
   const [calls, setCalls] = useState<ToolCall[]>([]);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const currentKey = `${workspaceId}:${refreshKey}`;
+  const loading = loadedKey !== currentKey;
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/tool-calls?workspaceId=${workspaceId}`)
       .then((r) => (r.ok ? r.json() : { toolCalls: [] }))
       .then((d) => {
-        if (!cancelled) setCalls(d.toolCalls ?? []);
+        if (cancelled) return;
+        setCalls(d.toolCalls ?? []);
+        setLoadedKey(`${workspaceId}:${refreshKey}`);
       });
     return () => {
       cancelled = true;
@@ -33,7 +38,9 @@ export default function ToolCallLog({
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
         Tool calls ({calls.length})
       </h3>
-      {calls.length === 0 ? (
+      {loading ? (
+        <p className="text-xs text-gray-500">Loading…</p>
+      ) : calls.length === 0 ? (
         <p className="text-xs text-gray-500">No tool calls yet.</p>
       ) : (
         <ul className="space-y-1">

@@ -1,23 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 import UploadForm from '@/components/UploadForm';
 import DocumentList from '@/components/DocumentList';
 import ChatWindow from '@/components/ChatWindow';
 import TaskList from '@/components/TaskList';
 import ToolCallLog from '@/components/ToolCallLog';
+import RetrievalDebugPanel, { type RetrievalDebugData } from '@/components/RetrievalDebugPanel';
 
 /**
- * Dashboard: documents + upload (left Sidebar), chat (right main window).
- * Everything is scoped to the active workspace from WorkspaceProvider;
- * switching workspaces re-scopes every panel. `refreshKey` bumps after an upload
- * or a chat turn so the read-only panels re-fetch.
+ * Dashboard:
+ * - Left Column: WorkspaceSwitcher, UploadForm, DocumentList, TaskList.
+ * - Center Column: ChatWindow (flexes to fill vertical space).
+ * - Right Column: RetrievalDebugPanel, ToolCallLog.
+ * Everything is scoped to the active workspace.
  */
 export default function DashboardPage() {
   const { activeWorkspace, workspaces, loading } = useWorkspace();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [activeRetrieval, setActiveRetrieval] = useState<RetrievalDebugData | null>(null);
+
   const bump = () => setRefreshKey((k) => k + 1);
+
+  // Clear retrieval debug payload immediately upon switching workspaces
+  useEffect(() => {
+    setActiveRetrieval(null);
+  }, [activeWorkspace?.id]);
 
   if (loading) {
     return (
@@ -48,26 +58,49 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto grid h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[260px_1fr_260px]">
-      {/* Left: documents + upload */}
-      <aside className="space-y-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+    <div className="mx-auto grid h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[280px_1fr_280px]">
+      {/* Left Column: Switcher + Upload + Documents + Tasks */}
+      <aside className="flex flex-col gap-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+        <div className="flex flex-col gap-2 border-b border-gray-800 pb-4">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+            Active Workspace
+          </label>
+          <WorkspaceSwitcher />
+        </div>
         <UploadForm workspaceId={activeWorkspace.id} onUploaded={bump} />
         <DocumentList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+        <div className="border-t border-gray-800/60 pt-4">
+          <TaskList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+        </div>
       </aside>
 
-      {/* Center: chat window */}
-      <section className="min-h-0">
+      {/* Center Column: Chat Window */}
+      <section className="min-h-0 flex flex-col">
         <ChatWindow
           key={activeWorkspace.id}
           workspaceId={activeWorkspace.id}
           onActivity={bump}
+          onRetrieval={setActiveRetrieval}
         />
       </section>
 
-      {/* Right: tasks + tool-call log */}
-      <aside className="space-y-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
-        <TaskList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
-        <ToolCallLog workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+      {/* Right Column: Retrieval Debug + Tool Call Log */}
+      <aside className="flex flex-col gap-4 overflow-y-auto rounded-xl border border-gray-800 bg-gray-900/50 p-4">
+        <div>
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            Retrieval Debug
+          </h3>
+          {activeRetrieval ? (
+            <RetrievalDebugPanel data={activeRetrieval} />
+          ) : (
+            <div className="rounded-lg border border-gray-800 bg-gray-950/40 p-4 text-center text-xs text-gray-400">
+              🔍 No query retrieval debug data loaded. Ask a question to inspect.
+            </div>
+          )}
+        </div>
+        <div className="border-t border-gray-800/60 pt-4">
+          <ToolCallLog workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+        </div>
       </aside>
     </div>
   );

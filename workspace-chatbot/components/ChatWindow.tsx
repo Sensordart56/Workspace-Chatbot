@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Citation } from '@/types';
-import RetrievalDebugPanel, { type RetrievalDebugData } from './RetrievalDebugPanel';
+import type { RetrievalDebugData } from './RetrievalDebugPanel';
 
 interface ToolCallView {
   name: string;
@@ -26,9 +26,11 @@ interface UIMessage {
 export default function ChatWindow({
   workspaceId,
   onActivity,
+  onRetrieval,
 }: {
   workspaceId: string;
   onActivity: () => void;
+  onRetrieval: (data: RetrievalDebugData | null) => void;
 }) {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [input, setInput] = useState('');
@@ -53,14 +55,17 @@ export default function ChatWindow({
           })
         );
         setMessages(loaded);
+        onRetrieval(null);
       });
     return () => {
       cancelled = true;
     };
-  }, [workspaceId]);
+  }, [workspaceId, onRetrieval]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages, sending]);
 
   async function handleSend(e: React.FormEvent) {
@@ -92,6 +97,7 @@ export default function ChatWindow({
           retrieval: data.retrieval,
         },
       ]);
+      onRetrieval(data.retrieval ?? null);
       onActivity();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Chat failed');
@@ -144,9 +150,7 @@ export default function ChatWindow({
               </div>
             )}
 
-            {m.role === 'assistant' && m.retrieval && (
-              <RetrievalDebugPanel data={m.retrieval} />
-            )}
+            {/* Inline debug panel removed; now rendered in sidebar */}
           </div>
         ))}
 

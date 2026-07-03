@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) throw new ValidationError(parsed.error.issues[0].message);
 
     const { workspaceId, message } = parsed.data;
-    
+
     // Hard constraint 4: verify ownership before any other logic.
     const workspace = await getAuthedWorkspace(workspaceId, user.id);
     console.log(`[Timing] auth: ${Date.now() - tStart} ms`);
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const tRetrieve = Date.now();
     const chunks = await retrieve(workspaceId, queryEmbedding);
     console.log(`[Timing] retrieve: ${Date.now() - tRetrieve} ms`);
-    
+
     const context = buildContext(chunks);
 
     // Build the conversation: prior turns + the current question with CONTEXT.
@@ -94,11 +94,16 @@ export async function POST(request: NextRequest) {
 
       console.log(`[Timing] toolCall predicted on iter ${iter}: names=${calls.map(c => c.name).join(', ')}`);
 
-      // Record the model's function-call turn in the conversation
-      contents.push({
-        role: 'model',
-        parts: calls.map((c) => ({ functionCall: c })),
-      });
+      // ✅ REPLACE WITH THIS: Preserves Gemini 3.1 cryptographic thought signatures
+      if (response.candidates?.[0]?.content) {
+        contents.push(response.candidates[0].content);
+      } else {
+        // Fallback safety layer
+        contents.push({
+          role: 'model',
+          parts: calls.map((c) => ({ functionCall: c })),
+        });
+      }
 
       // Validate + execute each call; feed results back to the model
       const responseParts = [];
