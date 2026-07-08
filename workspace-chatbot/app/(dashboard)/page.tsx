@@ -9,6 +9,7 @@ import ChatWindow from '@/components/ChatWindow';
 import TaskList from '@/components/TaskList';
 import ToolCallLog from '@/components/ToolCallLog';
 import RetrievalDebugPanel, { type RetrievalDebugData } from '@/components/RetrievalDebugPanel';
+import CreateWorkspaceModal from '@/components/CreateWorkspaceModal';
 
 /**
  * Dashboard:
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const { activeWorkspace, workspaces, loading } = useWorkspace();
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeRetrieval, setActiveRetrieval] = useState<RetrievalDebugData | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
   const bump = () => setRefreshKey((k) => k + 1);
 
@@ -39,14 +41,21 @@ export default function DashboardPage() {
 
   if (workspaces.length === 0) {
     return (
-      <div className="mx-auto max-w-lg py-20 text-center">
+      <div className="mx-auto max-w-lg py-20 text-center flex flex-col items-center justify-center">
         <h2 className="mb-2 text-xl font-semibold text-white">
           Welcome to Doc Assistant
         </h2>
-        <p className="text-gray-400">
-          Create your first workspace using the <strong>+ New</strong> button in the
-          top bar to get started.
+        <p className="text-gray-400 mb-6">
+          Create your first workspace to get started.
         </p>
+        <button
+          type="button"
+          onClick={() => setShowCreate(true)}
+          className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors shadow-lg"
+        >
+          Create Workspace
+        </button>
+        <CreateWorkspaceModal isOpen={showCreate} onClose={() => setShowCreate(false)} />
       </div>
     );
   }
@@ -67,8 +76,8 @@ export default function DashboardPage() {
           </label>
           <WorkspaceSwitcher />
         </div>
-        <UploadForm workspaceId={activeWorkspace.id} onUploaded={bump} />
-        <DocumentList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
+        <UploadForm key={activeWorkspace.id} workspaceId={activeWorkspace.id} onUploaded={bump} />
+        <DocumentList workspaceId={activeWorkspace.id} refreshKey={refreshKey} onActivity={bump} />
         <div className="border-t border-gray-800/60 pt-4">
           <TaskList workspaceId={activeWorkspace.id} refreshKey={refreshKey} />
         </div>

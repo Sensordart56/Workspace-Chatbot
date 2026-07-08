@@ -141,6 +141,12 @@ Phase 5 (Dashboard Composition & Polish) complete, verified compile success, lay
 - Implemented strict workspace scoping (UI level) across all panels (`DocumentList`, `TaskList`, `ToolCallLog`, `ChatWindow`, `RetrievalDebugPanel`) using `loadedKey` loaded states to ensure all panels instantly show a loading/cleared view upon changing workspaces, preventing visual flashes or state leakages.
 - Wired cross-component state synchronization by mapping `onActivity` bumps to trigger sibling panel re-fetches. Added `onRetrieval` callbacks from `ChatWindow` to dynamically load/clear the active query's debug sources inside the Right Sidebar panel.
 - Enhanced scrolling behavior in `ChatWindow.tsx` using synchronous React ref assignments to scroll chat containers cleanly on load and message updates.
+- Added automatic workspace provisioning during user signup in the frontend signup flow, creating a 'Personal Workspace' before redirecting to the dashboard to avoid zero-state UI breakages.
+- Replaced inline workspace creation input with an elegant modal popup (`CreateWorkspaceModal`) to prevent sidebar layout horizontal overflow and scrollbars.
+- Implemented workspace renaming (`RenameWorkspaceModal`) and cascading deletion (`DeleteWorkspaceModal`) UI components and wired them to the dynamic `PATCH` and `DELETE` workspace API endpoints.
+- Added a workspace creation button and modal directly inside the 0 workspaces zero-state screen.
+- Resolved workspace status/error message leakages in `UploadForm` by assigning `key={activeWorkspace.id}` to trigger a full state reset on switching workspaces.
+- Implemented document deletion UI and dynamic API endpoint (`DELETE /api/documents/[id]`) with RLS/workspace ownership verification, automatically cascading to clean up related vector chunks.
 
 ## In Progress / Blocked
 - None (Phase 5 fully complete).
@@ -172,3 +178,4 @@ Phase 5 (Dashboard Composition & Polish) complete, verified compile success, lay
 | 2026-07-03 | Phase 4 Structured Tool Calling | Implemented Zod schemas, executeTool, webhook timeout controls, mention stripping, and 3-step loop. Added GET tasks/tool-calls API routes and UI sidebars. Integration tests verified correct tool routing, failure logs, and doc-level prompt injection prevention. Build compiles clean. |
 | 2026-07-03 | Phase 5 Dashboard Composition & Polish | Restructured grid to 3-column split; moved WorkspaceSwitcher to left sidebar and created right sidebar with active retrieval debug and tool logs. Added loadedKey loaded checks to all sidebar components to prevent workspace leaks/flashing. Verified build succeeds. |
 | 2026-07-03 | Pre-Deployment Audit Resolution | Resolved B1, B3, B4 blockers & M4, M2/M3 edge protection and rate limit flags. Wrote seed script, overhauled README, updated rate limit handlers/routes, protected edge routes in middleware, and verified that all RAG/tools integration tests pass. |
+| 2026-07-08 | Workspace & Document CRUD, Auto-provision, status fix | Added signup auto-provision; replaced inline workspace creation with modal; added workspace rename/delete modals; fixed upload status leak; added document delete API + UI. |

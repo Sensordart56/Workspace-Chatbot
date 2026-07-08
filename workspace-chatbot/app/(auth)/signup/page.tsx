@@ -31,7 +31,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createBrowserClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -39,6 +39,20 @@ export default function SignupPage() {
       if (authError) {
         setError(authError.message);
         return;
+      }
+
+      if (data?.user) {
+        const { error: wsError } = await supabase
+          .from('workspaces')
+          .insert({
+            name: 'Personal Workspace',
+            owner_id: data.user.id,
+          });
+
+        if (wsError) {
+          setError(wsError.message);
+          return;
+        }
       }
 
       // If email confirmation is disabled in Supabase, the user is
